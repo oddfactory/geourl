@@ -577,56 +577,10 @@ def calculate_scores(data: dict):
     # ----------------- B. GEO SCORE CALCULATION (Max 100) -----------------
     geo_score = 0
 
-    # 1. Structured Data JSON-LD Presence (Max 35 pts)
-    ld_count = len(data["json_ld_scripts"])
-    parsed_ld = data["json_ld_parsed"]
-    
-    if ld_count > 0:
-        # Check if they parsed successfully
-        valid_count = sum(1 for item in parsed_ld if item is not None)
-        if valid_count == ld_count:
-            ld_pts = 35
-            geo_checks.append({
-                "category": "구조화 데이터",
-                "item": "JSON-LD 스키마 유효성",
-                "status": "PASS",
-                "msg": f"유효한 JSON-LD 스키마 마크업이 {ld_count}개 감지되었습니다. 생성형 검색엔진의 정확한 정보 매핑을 돕습니다.",
-                "value": f"{ld_count}개 유효"
-            })
-        elif valid_count > 0:
-            ld_pts = 20
-            geo_checks.append({
-                "category": "구조화 데이터",
-                "item": "JSON-LD 스키마 유효성",
-                "status": "WARN",
-                "msg": f"구조화 데이터를 찾았으나 일부 스크립트가 유효하지 않은 JSON 형식을 띄고 있습니다 ({ld_count}개 중 {ld_count-valid_count}개 에러).",
-                "value": f"{valid_count}개 유효"
-            })
-        else:
-            ld_pts = 10
-            geo_checks.append({
-                "category": "구조화 데이터",
-                "item": "JSON-LD 스키마 유효성",
-                "status": "FAIL",
-                "msg": "JSON-LD 스크립트는 존재하지만 문법 오류로 인해 해석되지 않습니다. Schema 문법을 점검하세요.",
-                "value": "해석 불가"
-            })
-    else:
-        ld_pts = 0
-        geo_checks.append({
-            "category": "구조화 데이터",
-            "item": "Schema.org 마크업 여부",
-            "status": "FAIL",
-            "msg": "Schema.org 기반의 JSON-LD 데이터가 없습니다. AI가 엔티티 및 사이트 정보를 구체화하는 데 지장이 생깁니다.",
-            "value": "감지 불가"
-        })
-    geo_score += ld_pts
-
-    # 2. Statistical Data, Numbers & Citations Presence (Max 35 pts)
+    # 1. Statistical Data, Numbers & Citations Presence (Max 50 pts)
     body = data["body_text"]
     
     # Check for statistics/numbers
-    # Matches typical numbers or percentages
     stat_matches = re.findall(r'\b\d+(?:\.\d+)?%?|\b\d+퍼센트\b|백분율|통계', body)
     # Check for quote marks / citations
     quote_matches = re.findall(r'["\'“‘」」]|따르면|밝혔다|인용|에 의하면|according to|cited|source', body)
@@ -635,19 +589,19 @@ def calculate_scores(data: dict):
     quote_density = len(quote_matches)
     
     # Calculate points
-    stat_pts = min(15, stat_density * 3) # Max 15 points
-    quote_pts = min(20, quote_density * 4) # Max 20 points
+    stat_pts = min(20, stat_density * 4) # Max 20 points
+    quote_pts = min(30, quote_density * 5) # Max 30 points
     citations_pts = stat_pts + quote_pts
     
-    if citations_pts >= 30:
+    if citations_pts >= 40:
         geo_checks.append({
             "category": "신뢰성 및 인용도",
             "item": "통계 및 외부 자료 인용 밀도",
             "status": "PASS",
-            "msg": f"본문 내 수치 데이터(약 {stat_density}회) 및 인용 표현(약 {quote_density}회)이 활발히 쓰였습니다. AI 추천 신뢰도가 높습니다.",
+            "msg": f"본문 내 수치 데이터(약 {stat_density}회) 및 인용 표현(약 {quote_density}회)이 활발히 쓰였습니다. AI 추천 신뢰도가 매우 높습니다.",
             "value": f"수치 {stat_density} / 인용 {quote_density}"
         })
-    elif citations_pts >= 15:
+    elif citations_pts >= 20:
         geo_checks.append({
             "category": "신뢰성 및 인용도",
             "item": "통계 및 외부 자료 인용 밀도",
@@ -665,7 +619,7 @@ def calculate_scores(data: dict):
         })
     geo_score += citations_pts
 
-    # 3. Readability & Clear Structure (Max 30 pts)
+    # 2. Readability & Clear Structure (Max 50 pts)
     # Sentence tokenization approximation (splits on periods)
     sentences = [s.strip() for s in re.split(r'[.!?]\s+', body) if s.strip()]
     num_sentences = len(sentences)
@@ -675,13 +629,13 @@ def calculate_scores(data: dict):
     para_count = len(data["paragraphs_list"])
     
     readability_pts = 0
-    # Sentence length scoring
+    # Sentence length scoring (Max 25 pts)
     if 0 < avg_sentence_len <= 65:
-        readability_pts += 15
+        readability_pts += 25
         s_status = "PASS"
         s_msg = f"문장의 평균 길이({int(avg_sentence_len)}자)가 간결하여 AI 언어모델이 맥락을 쉽게 구조화할 수 있습니다."
     elif 65 < avg_sentence_len <= 90:
-        readability_pts += 10
+        readability_pts += 15
         s_status = "WARN"
         s_msg = f"문장 평균 길이({int(avg_sentence_len)}자)가 약간 긴 편입니다. 조금 더 문장을 간소화하여 명확성을 높이세요."
     else:
@@ -697,17 +651,17 @@ def calculate_scores(data: dict):
         "value": f"평균 {int(avg_sentence_len)}자"
     })
     
-    # Paragraph scoring
+    # Paragraph scoring (Max 25 pts)
     if para_count >= 5:
-        readability_pts += 15
+        readability_pts += 25
         p_status = "PASS"
         p_msg = f"본문이 {para_count}개의 단락으로 구조적으로 조각나 있어 정보의 위계(Information Hierarchy)가 명확합니다."
     elif 2 <= para_count < 5:
-        readability_pts += 8
+        readability_pts += 12
         p_status = "WARN"
         p_msg = "단락 분리({para_count}개)가 적어 콘텐츠가 다소 뭉쳐 보입니다. 소제목(H2, H3)과 단락 구분을 확대하면 좋습니다."
     else:
-        readability_pts += 3
+        readability_pts += 5
         p_status = "FAIL"
         p_msg = "본문 텍스트가 거대하게 덩어리져 있어(1개 단락) 의미 단위를 분류하기 어렵습니다. 단락을 잘게 분해하고 소주제 헤더를 구성하세요."
         
@@ -721,8 +675,8 @@ def calculate_scores(data: dict):
     
     geo_score += readability_pts
 
-    # ----------------- 5-Dimention Radar Chart Mapping -----------------
-    # Compute scores for 5 areas mapped to 0-100 each:
+    # ----------------- 4-Dimension Radar Chart Mapping -----------------
+    # Compute scores for 4 areas mapped to 0-100 each:
     # 1. Metadata: Title (30) + Meta Desc (30) = 60 pts max. Map to 100
     dim_metadata = int((title_pts + desc_pts) * (100 / 60))
     
@@ -738,18 +692,14 @@ def calculate_scores(data: dict):
     # 3. Image Alt: img_pts (20) mapped to 100
     dim_images = int(img_pts * 5)
     
-    # 4. Structured Data: ld_pts (35) mapped to 100
-    dim_json_ld = int(ld_pts * (100 / 35))
-    
-    # 5. Authority & Citation Density + Readability
-    # Citations (35) + Readability (30) = 65 max. Map to 100
-    dim_trust_readability = int(min(100, (citations_pts + readability_pts) * (100 / 65)))
+    # 4. Authority & Citation Density + Readability
+    # Citations (50) + Readability (50) = 100 max.
+    dim_trust_readability = int(citations_pts + readability_pts)
 
     radar_scores = {
         "metadata": dim_metadata,
         "structure": dim_structure,
         "images": dim_images,
-        "json_ld": dim_json_ld,
         "trust_readability": dim_trust_readability
     }
 
@@ -766,13 +716,12 @@ def calculate_scores(data: dict):
 def generate_radar_chart(radar_scores: dict):
     """
     Renders an eye-catching, responsive Radar Chart using Plotly to show
-    5 key dimensions of optimization.
+    4 key dimensions of optimization.
     """
     categories = [
         '메타데이터 최적화', 
         '콘텐츠 위계 구조', 
         '이미지 웹 접근성', 
-        'Semantic 구조화 데이터', 
         '정보 신뢰도 & 가독성'
     ]
     
@@ -780,7 +729,6 @@ def generate_radar_chart(radar_scores: dict):
         radar_scores["metadata"],
         radar_scores["structure"],
         radar_scores["images"],
-        radar_scores["json_ld"],
         radar_scores["trust_readability"]
     ]
     
@@ -1032,7 +980,6 @@ if st.session_state.scraped_data and st.session_state.scores:
                     # Prepare input text (safely truncated to fit prompt cleanly)
                     preview_text = data["body_text"][:4000]
                     headers_summary = {k: v[:5] for k, v in data["headers"].items() if v}
-                    json_ld_summary = data["json_ld_scripts"][:2]
                     
                     prompt = f"""
                     너는 AI 검색 엔진(구글 SGE, Perplexity, ChatGPT Search, Gemini 등)에서 이 사이트의 콘텐츠가 최우선으로 인용되고 추천되도록 돕는 세계 최고의 SEO 및 GEO(생성형 엔진 최적화) 컨설턴트야.
@@ -1046,18 +993,14 @@ if st.session_state.scraped_data and st.session_state.scores:
                     [분석 점수 결과]
                     - SEO 점수: {scores["seo_score"]}/100
                     - GEO 점수: {scores["geo_score"]}/100
-                    - 5차원 다이어그램 점수:
+                    - 4차원 다이어그램 점수:
                       * 메타데이터: {scores["radar_scores"]["metadata"]}점
                       * 콘텐츠 구조: {scores["radar_scores"]["structure"]}점
                       * 이미지 최적화: {scores["radar_scores"]["images"]}점
-                      * 구조화 데이터(JSON-LD): {scores["radar_scores"]["json_ld"]}점
-                      * 신뢰성 및 가독성: {scores["radar_scores"]["trust_readability"]}점
+                      * 정보 신뢰도 & 가독성: {scores["radar_scores"]["trust_readability"]}점
 
                     [추출된 헤딩 구조 (최대 5개씩)]
                     {json.dumps(headers_summary, ensure_ascii=False, indent=2)}
-
-                    [구조화 데이터(JSON-LD) 탑재 목록 (최대 2개)]
-                    {json.dumps(json_ld_summary, ensure_ascii=False, indent=2)}
 
                     [사이트 본문 텍스트 (최대 4000자 발췌)]
                     {preview_text}
@@ -1117,19 +1060,19 @@ if st.session_state.scraped_data and st.session_state.scores:
                           "num": 1,
                           "title": "GEO 액션 플랜 제목",
                           "priority": "높음" 또는 "중간" 또는 "낮음",
-                          "text": "생성형 AI 검색 랭킹 상승을 위한 구체적인 텍스트 수정 및 구조 배치 팁. **실제 서비스에 즉시 삽입할 수 있는 최적화된 문맥 및 문구 수정 예시나, Schema.org 구조화 데이터(JSON-LD) 완성형 스크립트를 마크다운 코드 블록(예: ```json ... ```)으로 상세히 작성해서 포함시켜줘.**"
+                          "text": "생성형 AI 검색 랭킹 상승을 위한 구체적인 텍스트 수정 및 구조 배치 팁. **실제 서비스에 즉시 삽입할 수 있는 최적화된 문맥 및 문구 수정 예시를 마크다운 코드 블록(예: ```html ... ``` 또는 ```text ... ```)으로 상세히 작성해서 포함시켜줘.**"
                         }},
                         {{
                           "num": 2,
                           "title": "GEO 액션 플랜 제목",
                           "priority": "높음" 또는 "중간" 또는 "낮음",
-                          "text": "해결 방안 및 구체적 문구/구조화 데이터 예시 코드 블록"
+                          "text": "해결 방안 및 구체적 문구 예시 코드 블록"
                         }},
                         {{
                           "num": 3,
                           "title": "GEO 액션 플랜 제목",
                           "priority": "높음" 또는 "중간" 또는 "낮음",
-                          "text": "해결 방안 및 구체적 문구/구조화 데이터 예시 코드 블록"
+                          "text": "해결 방안 및 구체적 문구 예시 코드 블록"
                         }}
                       ]
                     }}
@@ -1320,14 +1263,7 @@ if st.session_state.scraped_data and st.session_state.scores:
         else:
             st.info("제목 태그(Heading tags)가 식별되지 않습니다.")
 
-        st.markdown("---")
-        st.markdown("<h4>💾 Schema.org JSON-LD 구조화 데이터 스크립트</h4>", unsafe_allow_html=True)
-        if data["json_ld_scripts"]:
-            for i, script in enumerate(data["json_ld_scripts"]):
-                st.markdown(f"**스크립트 블록 #{i+1}**")
-                st.code(script, language="json")
-        else:
-            st.info("감지된 JSON-LD 구조화 데이터가 없습니다.")
+        # Removed Schema.org JSON-LD structured data section from tab_raw
 
         st.markdown("---")
         st.markdown("<h4>📝 추출된 순수 본문 텍스트 (앞부분 1500자 요약)</h4>", unsafe_allow_html=True)
