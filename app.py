@@ -174,6 +174,100 @@ hr {
 [data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"]:hover {
     border-color: #66fcf1 !important;
 }
+
+/* Custom Problem and Action cards based on reference design */
+.problem-card {
+    display: flex;
+    align-items: flex-start;
+    background: #161a23 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    margin-bottom: 14px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+.problem-card:hover {
+    border-color: rgba(102, 252, 241, 0.5) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(102, 252, 241, 0.15) !important;
+}
+.problem-badge {
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    border-radius: 6px !important;
+    margin-right: 14px !important;
+    flex-shrink: 0 !important;
+    font-family: 'JetBrains Mono', monospace !important;
+}
+.seo-badge {
+    background: rgba(102, 252, 241, 0.15) !important;
+    color: #66fcf1 !important;
+    border: 1px solid rgba(102, 252, 241, 0.3) !important;
+}
+.geo-badge {
+    background: rgba(168, 85, 247, 0.15) !important;
+    color: #c084fc !important;
+    border: 1px solid rgba(168, 85, 247, 0.3) !important;
+}
+.problem-text {
+    font-size: 0.92rem !important;
+    color: #e2e8f0 !important;
+    line-height: 1.65 !important;
+}
+
+.action-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 18px !important;
+    background: #161a23 !important;
+    border-radius: 12px !important;
+    margin-bottom: 14px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+}
+.action-num-badge {
+    width: 26px !important;
+    height: 26px !important;
+    border-radius: 50% !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    margin-right: 14px !important;
+    flex-shrink: 0 !important;
+}
+.action-content {
+    font-size: 0.95rem !important;
+    color: #e2e8f0 !important;
+    line-height: 1.6 !important;
+}
+.priority-badge {
+    font-size: 0.75rem !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+    margin-left: 8px !important;
+    display: inline-block !important;
+}
+.priority-high {
+    background: rgba(239, 68, 68, 0.18) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.35) !important;
+}
+.priority-medium {
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+.priority-low {
+    background: rgba(16, 185, 129, 0.18) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -859,8 +953,10 @@ if st.session_state.scraped_data and st.session_state.scores:
                     json_ld_summary = data["json_ld_scripts"][:2]
                     
                     prompt = f"""
-                    너는 AI 검색 엔진(Perplexity, ChatGPT Search, Gemini 등)에서 이 사이트의 콘텐츠가 잘 인용되고 추천되도록 돕는 세계 최고의 GEO(Generative Engine Optimization) 컨설턴트야.
-                    사용자가 전달한 아래 웹사이트 파싱 데이터(SEO/GEO 점수, 콘텐츠 구조, JSON-LD, 본문 텍스트 등)를 면밀히 진단하고 피드백을 보고서 형식으로 출력해줘.
+                    너는 AI 검색 엔진(구글 SGE, Perplexity, ChatGPT Search, Gemini 등)에서 이 사이트의 콘텐츠가 최우선으로 인용되고 추천되도록 돕는 세계 최고의 SEO 및 GEO(생성형 엔진 최적화) 컨설턴트야.
+                    아래 제공되는 웹사이트 데이터를 바탕으로 가장 중요하고 시급히 개선해야 할 핵심 문제점과 구체적인 액션 플랜을 도출해줘.
+
+                    반드시 아래 제공된 JSON 형식(JSON schema)에 정확히 맞추어 응답을 작성해 줘. 다른 서론이나 설명은 배제하고 오직 순수 JSON 데이터만 출력해야 해.
 
                     [대상 URL]
                     {data["url"]}
@@ -884,13 +980,77 @@ if st.session_state.scraped_data and st.session_state.scores:
                     [사이트 본문 텍스트 (최대 4000자 발췌)]
                     {preview_text}
 
-                    [요구 사항]
-                    다음 목차에 따라 매우 현실적이고 구체적인 개선안을 전문적인 어조로 작성해줘.
-                    1. 🔍 생성형 AI 관점에서의 현 콘텐츠 진단 (AI 모델이 해당 텍스트를 파싱하고 문장 맥락을 파악하기에 얼마나 수월한지 구조적 정량 평가)
-                    2. 💡 생성형 AI 답변의 '추천 출처'로 신뢰받고 인용(Citation)을 획득하기 위해 필요한 핵심 텍스트 배치 및 정보 구성 조언
-                    3. 📈 구체적인 행동 가이드라인 (예: 헤더 구조 변경안, 통계 및 인용구 가미 기법, 유용한 스키마 타입 추천 등 3-5가지 구체적 행동 팁)
-                    
-                    친절하고 실무에 바로 적용할 수 있는 마크다운 형태로 전문적이고 풍부하게 제안해줘.
+                    [JSON 출력 형식 (Schema)]
+                    {{
+                      "seo_problems": [
+                        {{
+                          "num": 1,
+                          "text": "SEO 핵심 문제점 내용 설명 (구체적이고 통계적인 분석 반영)"
+                        }},
+                        {{
+                          "num": 2,
+                          "text": "SEO 핵심 문제점 내용 설명"
+                        }},
+                        {{
+                          "num": 3,
+                          "text": "SEO 핵심 문제점 내용 설명"
+                        }}
+                      ],
+                      "geo_problems": [
+                        {{
+                          "num": 1,
+                          "text": "GEO 핵심 문제점 내용 설명 (LLM 및 생성형 AI 관점에서 구체적인 문제 요인 분석)"
+                        }},
+                        {{
+                          "num": 2,
+                          "text": "GEO 핵심 문제점 내용 설명"
+                        }},
+                        {{
+                          "num": 3,
+                          "text": "GEO 핵심 문제점 내용 설명"
+                        }}
+                      ],
+                      "seo_action_plans": [
+                        {{
+                          "num": 1,
+                          "title": "SEO 액션 플랜 제목",
+                          "priority": "높음" 또는 "중간" 또는 "낮음",
+                          "text": "구체적인 실무 적용 해결 방안 설명"
+                        }},
+                        {{
+                          "num": 2,
+                          "title": "SEO 액션 플랜 제목",
+                          "priority": "높음" 또는 "중간" 또는 "낮음",
+                          "text": "해결 방안 설명"
+                        }},
+                        {{
+                          "num": 3,
+                          "title": "SEO 액션 플랜 제목",
+                          "priority": "높음" 또는 "중간" 또는 "낮음",
+                          "text": "해결 방안 설명"
+                        }}
+                      ],
+                      "geo_action_plans": [
+                        {{
+                          "num": 1,
+                          "title": "GEO 액션 플랜 제목",
+                          "priority": "높음" 또는 "중간" 또는 "낮음",
+                          "text": "생성형 AI 검색 랭킹 상승을 위한 구체적인 텍스트 수정 및 구조 배치 팁"
+                        }},
+                        {{
+                          "num": 2,
+                          "title": "GEO 액션 플랜 제목",
+                          "priority": "높음" 또는 "중간" 또는 "낮음",
+                          "text": "해결 방안 설명"
+                        }},
+                        {{
+                          "num": 3,
+                          "title": "GEO 액션 플랜 제목",
+                          "priority": "높음" 또는 "중간" 또는 "낮음",
+                          "text": "해결 방안 설명"
+                        }}
+                      ]
+                    }}
                     """
                     
                     # Try executing the selected model, with automatic backup models if rate limited or overloaded
@@ -907,7 +1067,10 @@ if st.session_state.scraped_data and st.session_state.scores:
                         try:
                             response = client.models.generate_content(
                                 model=model_name,
-                                contents=prompt
+                                contents=prompt,
+                                config=types.GenerateContentConfig(
+                                    response_mime_type="application/json"
+                                )
                             )
                             used_model = model_name
                             break
@@ -919,14 +1082,91 @@ if st.session_state.scraped_data and st.session_state.scores:
                     if response is None:
                         raise last_err
                     
-                    # Display report in a custom styled card
-                    st.markdown(f"""
-                    <div style="background: rgba(102, 252, 241, 0.05); border: 1px solid #66fcf1; border-radius: 16px; padding: 30px; margin-top: 20px;">
-                        <h4 style="color: #66fcf1; margin-top: 0;">📋 Gemini GEO 전문 정밀 컨설팅 보고서 <span style="font-size: 0.85rem; font-weight: normal; color: #8b9bb4; float: right;">사용된 모델: {used_model}</span></h4>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.markdown(response.text)
+                    try:
+                        # Attempt to parse output as JSON
+                        raw_text = response.text.strip()
+                        if raw_text.startswith("```"):
+                            match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", raw_text)
+                            if match:
+                                raw_text = match.group(1).strip()
+                        report_data = json.loads(raw_text)
+                        
+                        # Beautiful Premium Dashboard Layout Renderer
+                        st.markdown(f"""
+                        <div style="background: rgba(102, 252, 241, 0.05); border: 1px solid rgba(102, 252, 241, 0.3); border-radius: 16px; padding: 20px; margin-top: 25px; margin-bottom: 25px;">
+                            <h4 style="color: #66fcf1; margin: 0; font-size: 1.3rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+                                <span>📋 Gemini SEO & GEO 전문 심층 분석 보고서</span>
+                                <span style="font-size: 0.85rem; font-weight: normal; color: #8b9bb4;">사용된 AI 모델: {used_model}</span>
+                            </h4>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        # Create two columns for SEO/GEO key problems
+                        p_col1, p_col2 = st.columns(2, gap="medium")
+                        
+                        with p_col1:
+                            st.markdown('<h4 style="color: #66fcf1; margin-bottom: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">🔒 SEO 핵심 문제점</h4>', unsafe_allow_html=True)
+                            for prob in report_data.get("seo_problems", []):
+                                st.markdown(f"""
+                                <div class="problem-card">
+                                    <div class="problem-badge seo-badge">#{prob.get('num', 1)}</div>
+                                    <div class="problem-text">{prob.get('text', '')}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                        with p_col2:
+                            st.markdown('<h4 style="color: #c084fc; margin-bottom: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px;">🌐 GEO 핵심 문제점</h4>', unsafe_allow_html=True)
+                            for prob in report_data.get("geo_problems", []):
+                                st.markdown(f"""
+                                <div class="problem-card">
+                                    <div class="problem-badge geo-badge">#{prob.get('num', 1)}</div>
+                                    <div class="problem-text">{prob.get('text', '')}</div>
+                                </div>
+                                """, unsafe_allow_html=True)
+
+                        st.markdown("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+
+                        # Action Plans section with tabs
+                        st.markdown('<h4 style="color: #ffffff; margin-bottom: 15px; font-weight: 700;">🚀 최적화 액션 플랜</h4>', unsafe_allow_html=True)
+                        
+                        act_tab_seo, act_tab_geo = st.tabs(["🔒 SEO 액션 플랜", "🌐 GEO 액션 플랜"])
+                        
+                        with act_tab_seo:
+                            st.markdown("<p style='color: #cbd5e1; font-size: 0.95rem; margin-bottom: 15px;'>전통적 검색 엔진 최적화 및 봇 크롤링 효율을 높이기 위한 실행 플랜입니다.</p>", unsafe_allow_html=True)
+                            for plan in report_data.get("seo_action_plans", []):
+                                prio = plan.get('priority', '중간')
+                                prio_class = "priority-high" if prio == "높음" else ("priority-medium" if prio == "중간" else "priority-low")
+                                st.markdown(f"""
+                                <div class="action-item">
+                                    <div class="action-num-badge" style="background: #45b3e0;">{plan.get('num', 1)}</div>
+                                    <div class="action-content">
+                                        <strong style="color: #ffffff; font-size: 1.05rem;">{plan.get('title', '')}</strong>
+                                        <span class="priority-badge {prio_class}">우선순위: {prio}</span>
+                                        <div style="margin-top: 6px; color: #cbd5e1; font-size: 0.95rem; line-height: 1.6;">{plan.get('text', '')}</div>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                        with act_tab_geo:
+                            st.markdown("<p style='color: #cbd5e1; font-size: 0.95rem; margin-bottom: 15px;'>생성형 AI 검색 엔진(LLM)에 의해 정보 출처로 적극 추천/인용되기 위한 액션 플랜입니다.</p>", unsafe_allow_html=True)
+                            for plan in report_data.get("geo_action_plans", []):
+                                prio = plan.get('priority', '중간')
+                                prio_class = "priority-high" if prio == "높음" else ("priority-medium" if prio == "중간" else "priority-low")
+                                st.markdown(f"""
+                                <div class="action-item">
+                                    <div class="action-num-badge" style="background: #8b5cf6;">{plan.get('num', 1)}</div>
+                                    <div class="action-content">
+                                        <strong style="color: #ffffff; font-size: 1.05rem;">{plan.get('title', '')}</strong>
+                                        <span class="priority-badge {prio_class}">우선순위: {prio}</span>
+                                        <div style="margin-top: 6px; color: #cbd5e1; font-size: 0.95rem; line-height: 1.6;">{plan.get('text', '')}</div>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
+                                
+                    except Exception as parse_err:
+                        # Resilient Fallback to raw text representation
+                        st.warning("⚠️ 심층 분석 보고서를 구조화된 레이아웃으로 파싱하지 못했습니다. 대신 원본 마크다운 텍스트를 출력합니다.")
+                        st.markdown(response.text)
                     
                 except Exception as e:
                     st.error(f"❌ Gemini 컨설팅 리포트 생성 도중 에러가 발생했습니다: {str(e)}")
