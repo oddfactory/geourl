@@ -273,37 +273,11 @@ hr {
 
 # ----------------- 1. Web Scraper Module -----------------
 
-def scrape_url(url: str):
+def parse_html_content(html: str, url: str):
     """
-    Scrapes the target URL, extracts primary HTML elements, meta tags, and body text.
-    Handles network exceptions gracefully.
+    Parses raw HTML content, extracts primary HTML elements, meta tags, and body text.
+    Shared by both the automatic web scraper and the manual HTML paste input mode.
     """
-    # Clean the URL input
-    url = url.strip()
-    if not url.startswith(("http://", "https://")):
-        url = "https://" + url
-
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
-    }
-
-    try:
-        response = requests.get(url, headers=headers, timeout=12)
-        response.raise_for_status()
-    except requests.exceptions.MissingSchema:
-        raise ValueError("올바르지 않은 URL 형식입니다. 프로토콜(http://, https://)을 확인해 주세요.")
-    except requests.exceptions.ConnectionError:
-        raise ValueError("해당 서버에 연결할 수 없습니다. URL 주소가 정확한지 혹은 오프라인 상태인지 확인해 주세요.")
-    except requests.exceptions.Timeout:
-        raise ValueError("요청 시간이 초과되었습니다. 웹페이지가 너무 느리거나 차단되었을 수 있습니다.")
-    except requests.exceptions.HTTPError as e:
-        raise ValueError(f"HTTP 에러가 발생했습니다: Status Code {e.response.status_code}")
-    except Exception as e:
-        raise ValueError(f"페이지 크롤링 도중 예기치 못한 에러가 발생했습니다: {str(e)}")
-
-    html = response.text
     soup = BeautifulSoup(html, 'html.parser')
 
     # Basic metadata extraction
@@ -374,6 +348,56 @@ def scrape_url(url: str):
         "json_ld_parsed": json_ld_parsed,
         "paragraphs_list": paragraphs
     }
+
+
+def scrape_url(url: str):
+    """
+    Scrapes the target URL using highly optimized modern browser headers,
+    extracts primary HTML elements, and delegates to parse_html_content.
+    Handles network exceptions gracefully and flags 403 Forbidden specifically.
+    """
+    # Clean the URL input
+    url = url.strip()
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
+        'Cache-Control': 'max-age=0'
+    }
+
+    try:
+        response = requests.get(url, headers=headers, timeout=12)
+        response.raise_for_status()
+    except requests.exceptions.MissingSchema:
+        raise ValueError("올바르지 않은 URL 형식입니다. 프로토콜(http://, https://)을 확인해 주세요.")
+    except requests.exceptions.ConnectionError:
+        raise ValueError("해당 서버에 연결할 수 없습니다. URL 주소가 정확한지 혹은 오프라인 상태인지 확인해 주세요.")
+    except requests.exceptions.Timeout:
+        raise ValueError("요청 시간이 초과되었습니다. 웹페이지가 너무 느리거나 차단되었을 수 있습니다.")
+    except requests.exceptions.HTTPError as e:
+        status_code = e.response.status_code
+        if status_code == 403:
+            raise ValueError("HTTP 403 Forbidden 에러가 발생했습니다. 대상 사이트의 강력한 보안 방화벽(Cloudflare 등)이 자동 차단 기능을 적용한 경우입니다.")
+        else:
+            raise ValueError(f"HTTP 에러가 발생했습니다: Status Code {status_code}")
+    except Exception as e:
+        raise ValueError(f"페이지 크롤링 도중 예기치 못한 에러가 발생했습니다: {str(e)}")
+
+    return parse_html_content(response.text, url)
+
 
 # ----------------- 2. SEO & GEO Scoring Engine -----------------
 
@@ -809,18 +833,102 @@ def generate_radar_chart(radar_scores: dict):
 st.markdown('<div class="main-title">🔍 AI-SEO & GEO Insight Studio</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">웹사이트의 전통적 검색엔진 최적화(SEO) 및 차세대 생성형 AI 엔진 최적화(GEO) 동시 정밀 측정 플랫폼</div>', unsafe_allow_html=True)
 
-# Define columns for URL inputs and actions
-col1, col2 = st.columns([4, 1])
+# Initialize Session States
+if "scraped_data" not in st.session_state:
+    st.session_state.scraped_data = None
+if "scores" not in st.session_state:
+    st.session_state.scores = None
+if "show_403_guide" not in st.session_state:
+    st.session_state.show_403_guide = False
 
-with col1:
-    url_input = st.text_input(
-        "분석할 웹사이트 URL 입력",
-        placeholder="https://example.com 또는 blog.naver.com/post",
-        label_visibility="collapsed"
+# Input Method Tabs
+input_tab_url, input_tab_html = st.tabs(["🔗 URL 즉시 분석", "📄 HTML 소스 직접 붙여넣기 (보안 우회용)"])
+
+with input_tab_url:
+    st.markdown("<p style='color: #cbd5e1; font-size: 0.95rem; margin-bottom: 10px;'>웹사이트 주소(URL)를 입력하면 즉시 크롤링을 시도하여 실시간으로 정밀 측정합니다.</p>", unsafe_allow_html=True)
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        url_input = st.text_input(
+            "분석할 웹사이트 URL 입력",
+            placeholder="https://example.com 또는 blog.naver.com/post",
+            label_visibility="collapsed",
+            key="url_input_key"
+        )
+    with col2:
+        start_btn = st.button("📈 분석 시작", use_container_width=True, key="start_btn_key")
+
+    if start_btn:
+        if not url_input:
+            st.error("⚠️ 분석할 URL 주소를 명확히 입력해 주십시오.")
+        else:
+            st.session_state.show_403_guide = False
+            with st.spinner("⚡ 타겟 사이트의 HTML 코드를 분석하고 위계를 구조화하고 있습니다..."):
+                try:
+                    data = scrape_url(url_input)
+                    scores = calculate_scores(data)
+                    st.session_state.scraped_data = data
+                    st.session_state.scores = scores
+                    st.success("✅ 사이트 구조 분석 및 점수 측정이 성공적으로 완료되었습니다!")
+                except Exception as e:
+                    err_msg = str(e)
+                    st.error(f"❌ 분석 실패: {err_msg}")
+                    if "403" in err_msg or "Forbidden" in err_msg:
+                        st.session_state.show_403_guide = True
+
+    # 403 Forbidden Friendly Help Guide Card
+    if st.session_state.show_403_guide:
+        st.markdown("""
+        <div style="background: rgba(231, 76, 60, 0.08); border: 2px solid rgba(231, 76, 60, 0.4); border-radius: 12px; padding: 22px; margin-top: 15px; margin-bottom: 15px;">
+            <h4 style="color: #e74c3c; margin-top: 0; margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                🛑 HTTP 403 Forbidden 에러 대처 가이드
+            </h4>
+            <p style="color: #cbd5e1; font-size: 0.93rem; line-height: 1.6; margin-bottom: 15px;">
+                분석을 요청하신 사이트는 <strong>Cloudflare, Akamai, AWS WAF</strong> 등 세계 최고 수준의 디도스 방어 및 무단 크롤링 방지 방화벽으로 강력히 보호되어 있습니다. 
+                이러한 보안 시스템은 사람이 브라우저로 접근하는 것과 프로그램이 접속하는 것을 정교하게 가려내어 자동 스크래핑을 즉시 차단(HTTP 403 거부)합니다.
+            </p>
+            <h5 style="color: #ffffff; font-weight: 600; margin-bottom: 8px;">💡 어떻게 100% 우회하여 완벽히 분석할 수 있나요?</h5>
+            <ol style="color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; margin-left: 20px; padding-left: 0;">
+                <li>크롬 등 브라우저를 열고 분석하고자 하던 타겟 페이지 주소로 정상 접속합니다.</li>
+                <li>웹페이지 화면 빈 곳에서 <strong>마우스 우클릭 -> 페이지 소스 보기</strong>를 클릭하거나 <strong>Ctrl + U</strong> 키를 누릅니다.</li>
+                <li>새 창에 나타나는 전체 소스 코드를 모두 선택(<strong>Ctrl + A</strong>)하여 복사(<strong>Ctrl + C</strong>)합니다.</li>
+                <li>상단의 <strong>'📄 HTML 소스 직접 붙여넣기'</strong> 탭을 클릭하여 복사한 HTML 소스를 입력창에 붙여 넣고 분석 버튼을 누릅니다!</li>
+            </ol>
+        </div>
+        """, unsafe_allow_html=True)
+
+with input_tab_html:
+    st.markdown("<p style='color: #cbd5e1; font-size: 0.95rem; margin-bottom: 10px;'>보안 방화벽으로 자동 크롤링이 차단된 페이지의 소스 코드를 복사해서 붙여넣으시면, 보안 제약 없이 동일한 정밀 분석이 가능합니다.</p>", unsafe_allow_html=True)
+    
+    virtual_url = st.text_input(
+        "대상 주소(URL) 입력 (선택사항)",
+        placeholder="https://example.com (분석 시 링크 매핑 및 문맥 제공용)",
+        key="virtual_url_key"
     )
-
-with col2:
-    start_btn = st.button("📈 분석 시작", use_container_width=True)
+    
+    html_input = st.text_area(
+        "HTML 소스 코드 붙여넣기",
+        placeholder="<!DOCTYPE html> ... 으로 시작하는 웹페이지 전체 소스코드를 복사해서 넣어주세요.",
+        height=220,
+        key="html_input_key"
+    )
+    
+    html_start_btn = st.button("📄 붙여넣은 HTML 소스 분석 시작", use_container_width=True, key="html_start_btn_key")
+    
+    if html_start_btn:
+        if not html_input.strip():
+            st.error("⚠️ 분석할 HTML 소스 코드를 입력창에 채워주십시오.")
+        else:
+            st.session_state.show_403_guide = False
+            with st.spinner("⚡ 직접 입력된 HTML 코드를 구문 분석하고 위계를 구조화하고 있습니다..."):
+                try:
+                    ref_url = virtual_url.strip() if virtual_url.strip() else "https://direct-html-input.local"
+                    data = parse_html_content(html_input, ref_url)
+                    scores = calculate_scores(data)
+                    st.session_state.scraped_data = data
+                    st.session_state.scores = scores
+                    st.success("✅ 수동 입력된 HTML 구조 분석 및 점수 측정이 성공적으로 완료되었습니다!")
+                except Exception as e:
+                    st.error(f"❌ HTML 파싱 중 에러 발생: {str(e)}")
 
 # ----------------- Sidebar Configuration -----------------
 st.sidebar.image("https://img.icons8.com/nolan/128/artificial-intelligence.png", width=70)
@@ -857,32 +965,6 @@ st.sidebar.markdown(
     인공지능 검색 엔진이 정보 출처를 채택하고 답변을 생성할 때, 특정 사이트가 **가장 신뢰성 높고 명확한 출처**로 선정되게끔 콘텐츠 정보 구조와 텍스트 위계를 AI 모델 선호에 맞게 가공하는 최신 최적화 패러다임입니다.
     """
 )
-
-# Initialize Session States
-if "scraped_data" not in st.session_state:
-    st.session_state.scraped_data = None
-if "scores" not in st.session_state:
-    st.session_state.scores = None
-
-# If user clicks analyze button
-if start_btn:
-    if not url_input:
-        st.error("⚠️ 분석할 URL 주소를 명확히 입력해 주십시오.")
-    else:
-        with st.spinner("⚡ 타겟 사이트의 HTML 코드를 분석하고 위계를 구조화하고 있습니다..."):
-            try:
-                # Scrape URL
-                data = scrape_url(url_input)
-                # Compute scores
-                scores = calculate_scores(data)
-                
-                # Save to session state
-                st.session_state.scraped_data = data
-                st.session_state.scores = scores
-                
-                st.success("✅ 사이트 구조 분석 및 점수 측정이 성공적으로 완료되었습니다!")
-            except Exception as e:
-                st.error(f"❌ 분석 실패: {str(e)}")
 
 # Display results if available in session state
 if st.session_state.scraped_data and st.session_state.scores:
