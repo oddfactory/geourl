@@ -132,6 +132,48 @@ hr {
     background: linear-gradient(to right, rgba(102, 252, 241, 0), rgba(102, 252, 241, 0.3), rgba(102, 252, 241, 0));
     margin: 2rem 0;
 }
+
+/* Sidebar Input styling to make them pop out and have clear contrast */
+[data-testid="stSidebar"] [data-testid="stTextInput"] input {
+    background-color: #1a1f2c !important;
+    color: #ffffff !important;
+    border: 2px solid #66fcf1 !important;
+    border-radius: 8px !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    box-shadow: 0 0 12px rgba(102, 252, 241, 0.35) !important;
+    padding: 10px 12px !important;
+    transition: all 0.3s ease !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stTextInput"] input:focus {
+    border-color: #45b3e0 !important;
+    box-shadow: 0 0 16px rgba(69, 179, 224, 0.55) !important;
+    background-color: #1e2535 !important;
+}
+
+/* Style label text specifically for the API Key inside the sidebar */
+[data-testid="stSidebar"] [data-testid="stTextInput"] label,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] label {
+    color: #66fcf1 !important;
+    font-weight: 700 !important;
+    font-size: 1.05rem !important;
+    margin-bottom: 8px !important;
+    letter-spacing: 0.5px !important;
+    display: inline-block !important;
+}
+
+/* Sidebar Selectbox Custom Style for visibility */
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] {
+    background-color: #1a1f2c !important;
+    border: 2px solid rgba(102, 252, 241, 0.6) !important;
+    border-radius: 8px !important;
+    color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"]:hover {
+    border-color: #66fcf1 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -688,19 +730,27 @@ with col2:
 
 # ----------------- Sidebar Configuration -----------------
 st.sidebar.image("https://img.icons8.com/nolan/128/artificial-intelligence.png", width=70)
-st.sidebar.markdown("### 🛠️ Gemini API 설정")
-st.sidebar.markdown(
-    "차세대 생성형 검색 엔진(Gemini, Perplexity, ChatGPT Search)에서 상위에 랭크 및 인용되기 위한 **GEO 맞춤형 심층 컨설팅**을 받아보실 수 있습니다."
-)
+
+# Wrap API settings title and description in a beautiful, premium visual card with high visibility
+st.sidebar.markdown("""
+<div style="background: rgba(102, 252, 241, 0.08); border: 2px solid rgba(102, 252, 241, 0.4); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+    <h3 style="color: #66fcf1; margin-top: 0; margin-bottom: 10px; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+        🛠️ Gemini API 설정
+    </h3>
+    <p style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.5; margin: 0;">
+        Google AI Studio에서 발급받은 API 키를 등록하면, AI 검색에 최적화된 <strong>GEO 전문가 심층 피드백</strong>을 실시간으로 발급받을 수 있습니다.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 api_key = st.sidebar.text_input(
-    "Gemini API Key 입력",
+    "🔑 Gemini API Key 입력",
     type="password",
     help="Google AI Studio에서 발급받은 API 키를 입력해 주세요."
 )
 
 selected_model = st.sidebar.selectbox(
-    "Gemini 모델 선택",
+    "⚙️ Gemini 모델 선택",
     ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-1.5-flash", "gemini-1.5-pro"],
     index=0,
     help="특정 모델의 트래픽 폭주로 503 에러가 발생할 시 다른 버전의 모델을 선택해 보실 수 있습니다."
