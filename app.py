@@ -1015,19 +1015,19 @@ if st.session_state.scraped_data and st.session_state.scores:
                           "num": 1,
                           "title": "SEO 액션 플랜 제목",
                           "priority": "높음" 또는 "중간" 또는 "낮음",
-                          "text": "구체적인 실무 적용 해결 방안 설명"
+                          "text": "구체적인 실무 적용 해결 방안 설명. **반드시 직접 사용할 수 있는 구체적인 HTML 태그 수정 예시나 스크립트 코드 조각을 마크다운 코드 블록(예: ```html ... ```)으로 정교하게 구성해서 포함시켜줘.**"
                         }},
                         {{
                           "num": 2,
                           "title": "SEO 액션 플랜 제목",
                           "priority": "높음" 또는 "중간" 또는 "낮음",
-                          "text": "해결 방안 설명"
+                          "text": "해결 방안 설명 및 스크립트 수정 제안 코드 블록"
                         }},
                         {{
                           "num": 3,
                           "title": "SEO 액션 플랜 제목",
                           "priority": "높음" 또는 "중간" 또는 "낮음",
-                          "text": "해결 방안 설명"
+                          "text": "해결 방안 설명 및 스크립트 수정 제안 코드 블록"
                         }}
                       ],
                       "geo_action_plans": [
@@ -1035,19 +1035,19 @@ if st.session_state.scraped_data and st.session_state.scores:
                           "num": 1,
                           "title": "GEO 액션 플랜 제목",
                           "priority": "높음" 또는 "중간" 또는 "낮음",
-                          "text": "생성형 AI 검색 랭킹 상승을 위한 구체적인 텍스트 수정 및 구조 배치 팁"
+                          "text": "생성형 AI 검색 랭킹 상승을 위한 구체적인 텍스트 수정 및 구조 배치 팁. **실제 서비스에 즉시 삽입할 수 있는 최적화된 문맥 및 문구 수정 예시나, Schema.org 구조화 데이터(JSON-LD) 완성형 스크립트를 마크다운 코드 블록(예: ```json ... ```)으로 상세히 작성해서 포함시켜줘.**"
                         }},
                         {{
                           "num": 2,
                           "title": "GEO 액션 플랜 제목",
                           "priority": "높음" 또는 "중간" 또는 "낮음",
-                          "text": "해결 방안 설명"
+                          "text": "해결 방안 및 구체적 문구/구조화 데이터 예시 코드 블록"
                         }},
                         {{
                           "num": 3,
                           "title": "GEO 액션 플랜 제목",
                           "priority": "높음" 또는 "중간" 또는 "낮음",
-                          "text": "해결 방안 설명"
+                          "text": "해결 방안 및 구체적 문구/구조화 데이터 예시 코드 블록"
                         }}
                       ]
                     }}
@@ -1136,32 +1136,36 @@ if st.session_state.scraped_data and st.session_state.scores:
                             for plan in report_data.get("seo_action_plans", []):
                                 prio = plan.get('priority', '중간')
                                 prio_class = "priority-high" if prio == "높음" else ("priority-medium" if prio == "중간" else "priority-low")
+                                
                                 st.markdown(f"""
-                                <div class="action-item">
-                                    <div class="action-num-badge" style="background: #45b3e0;">{plan.get('num', 1)}</div>
-                                    <div class="action-content">
-                                        <strong style="color: #ffffff; font-size: 1.05rem;">{plan.get('title', '')}</strong>
-                                        <span class="priority-badge {prio_class}">우선순위: {prio}</span>
-                                        <div style="margin-top: 6px; color: #cbd5e1; font-size: 0.95rem; line-height: 1.6;">{plan.get('text', '')}</div>
-                                    </div>
+                                <div style="margin-top: 22px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <div class="action-num-badge" style="background: #45b3e0; margin-right: 0; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; color: white; font-weight: bold; font-size: 0.9rem;">{plan.get('num', 1)}</div>
+                                    <strong style="color: #ffffff; font-size: 1.05rem;">{plan.get('title', '')}</strong>
+                                    <span class="priority-badge {prio_class}">우선순위: {prio}</span>
                                 </div>
                                 """, unsafe_allow_html=True)
+                                
+                                # Render body as rich markdown (to properly support code blocks, bold strings, and script examples)
+                                st.markdown(plan.get('text', ''))
+                                st.markdown("<hr style='margin: 1.5rem 0; opacity: 0.35;' />", unsafe_allow_html=True)
                                 
                         with act_tab_geo:
                             st.markdown("<p style='color: #cbd5e1; font-size: 0.95rem; margin-bottom: 15px;'>생성형 AI 검색 엔진(LLM)에 의해 정보 출처로 적극 추천/인용되기 위한 액션 플랜입니다.</p>", unsafe_allow_html=True)
                             for plan in report_data.get("geo_action_plans", []):
                                 prio = plan.get('priority', '중간')
                                 prio_class = "priority-high" if prio == "높음" else ("priority-medium" if prio == "중간" else "priority-low")
+                                
                                 st.markdown(f"""
-                                <div class="action-item">
-                                    <div class="action-num-badge" style="background: #8b5cf6;">{plan.get('num', 1)}</div>
-                                    <div class="action-content">
-                                        <strong style="color: #ffffff; font-size: 1.05rem;">{plan.get('title', '')}</strong>
-                                        <span class="priority-badge {prio_class}">우선순위: {prio}</span>
-                                        <div style="margin-top: 6px; color: #cbd5e1; font-size: 0.95rem; line-height: 1.6;">{plan.get('text', '')}</div>
-                                    </div>
+                                <div style="margin-top: 22px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <div class="action-num-badge" style="background: #8b5cf6; margin-right: 0; display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; color: white; font-weight: bold; font-size: 0.9rem;">{plan.get('num', 1)}</div>
+                                    <strong style="color: #ffffff; font-size: 1.05rem;">{plan.get('title', '')}</strong>
+                                    <span class="priority-badge {prio_class}">우선순위: {prio}</span>
                                 </div>
                                 """, unsafe_allow_html=True)
+                                
+                                # Render body as rich markdown (to properly support code blocks, bold strings, and JSON-LD script examples)
+                                st.markdown(plan.get('text', ''))
+                                st.markdown("<hr style='margin: 1.5rem 0; opacity: 0.35;' />", unsafe_allow_html=True)
                                 
                     except Exception as parse_err:
                         # Resilient Fallback to raw text representation
