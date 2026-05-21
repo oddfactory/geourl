@@ -57,25 +57,25 @@ h1, h2, h3, h4, h5, h6 {
 
 .sub-title {
     font-size: 1.1rem;
-    color: #8b9bb4;
+    color: #e2e8f0; /* Ultra-bright gray for maximum readability */
     text-align: center;
     margin-bottom: 2.5rem;
 }
 
 /* Custom premium container cards */
 .custom-card {
-    background: rgba(31, 40, 51, 0.4);
-    border: 1px solid rgba(102, 252, 241, 0.15);
+    background: #161a23; /* Solid card background for perfect high contrast */
+    border: 1px solid rgba(102, 252, 241, 0.3); /* Brighter neon-teal border */
     border-radius: 16px;
     padding: 24px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(8px);
 }
 
 .custom-card:hover {
-    border-color: rgba(102, 252, 241, 0.35);
-    box-shadow: 0 6px 24px rgba(102, 252, 241, 0.08);
+    border-color: rgba(102, 252, 241, 0.6);
+    box-shadow: 0 6px 24px rgba(102, 252, 241, 0.15);
     transition: all 0.3s ease;
 }
 
@@ -95,9 +95,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .metric-lbl {
     font-size: 1rem;
-    color: #8b9bb4;
+    color: #a5f3fc; /* High-contrast soft cyan */
     text-transform: uppercase;
     letter-spacing: 1.5px;
+    font-weight: 500;
 }
 
 /* Custom Alert Badges */
@@ -764,9 +765,9 @@ if st.session_state.scraped_data and st.session_state.scores:
         <div class="custom-card">
             <div class="metric-container">
                 <div class="metric-lbl">SEO (검색엔진 최적화) 점수</div>
-                <div class="metric-val" style="color: {seo_color};">{scores["seo_score"]}<span style="font-size: 1.5rem; font-weight: normal; color: #8b9bb4;">/100</span></div>
+                <div class="metric-val" style="color: {seo_color};">{scores["seo_score"]}<span style="font-size: 1.5rem; font-weight: normal; color: #cbd5e1;">/100</span></div>
             </div>
-            <p style="margin: 0; font-size: 0.95rem; color: #b0c4de;">
+            <p style="margin: 0; font-size: 0.95rem; color: #ffffff; line-height: 1.6;">
                 구글, 네이버 등 크롤러 기반의 기존 검색봇이 정보를 완벽히 인덱싱하고 크롤링할 수 있도록 돕는 HTML 구조적 정합성 점수입니다.
             </p>
         </div>
@@ -778,9 +779,9 @@ if st.session_state.scraped_data and st.session_state.scores:
         <div class="custom-card" style="margin-top: 15px;">
             <div class="metric-container">
                 <div class="metric-lbl">GEO (생성형엔진 최적화) 점수</div>
-                <div class="metric-val" style="color: {geo_color};">{scores["geo_score"]}<span style="font-size: 1.5rem; font-weight: normal; color: #8b9bb4;">/100</span></div>
+                <div class="metric-val" style="color: {geo_color};">{scores["geo_score"]}<span style="font-size: 1.5rem; font-weight: normal; color: #cbd5e1;">/100</span></div>
             </div>
-            <p style="margin: 0; font-size: 0.95rem; color: #b0c4de;">
+            <p style="margin: 0; font-size: 0.95rem; color: #ffffff; line-height: 1.6;">
                 LLM 및 생성형 답변 생성봇이 본문 텍스트 내에서 객관적 근거를 인식하고 구조화된 Schema(JSON-LD)를 통해 엔티티로 매핑하여 답변 출처로 채택할 수 있는 AI 선호도 점수입니다.
             </p>
         </div>
@@ -888,33 +889,33 @@ if st.session_state.scraped_data and st.session_state.scores:
 
     # 1. Tab SEO Display
     with tab_seo:
-        st.markdown("<p style='color: #8b9bb4;'>크롤러 기반의 일반 검색 봇에 노출되는 기준들을 정밀 검진합니다.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #cbd5e1; font-size: 1rem; margin-bottom: 15px;'>크롤러 기반의 일반 검색 봇에 노출되는 기준들을 정밀 검진합니다.</p>", unsafe_allow_html=True)
         
         for item in scores["seo_checks"]:
             badge_class = "status-pass" if item["status"] == "PASS" else ("status-warn" if item["status"] == "WARN" else "status-fail")
             st.markdown(f"""
-            <div style="background: rgba(30, 30, 45, 0.4); border-left: 4px solid { '#2ecc71' if item['status'] == 'PASS' else ('#f1c40f' if item['status'] == 'WARN' else '#e74c3c') }; padding: 15px; border-radius: 4px; margin-bottom: 12px;">
+            <div style="background: #161a23; border-left: 4px solid { '#2ecc71' if item['status'] == 'PASS' else ('#f1c40f' if item['status'] == 'WARN' else '#e74c3c') }; padding: 15px; border-radius: 8px; margin-bottom: 12px; border-top: 1px solid rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <strong style="color: #ffffff; font-size: 1.05rem;">{item["item"]}</strong>
                     <span class="status-badge {badge_class}">{item["status"]} ({item["value"]})</span>
                 </div>
-                <div style="font-size: 0.92rem; color: #b0c4de; margin-top: 6px;">{item["msg"]}</div>
+                <div style="font-size: 0.92rem; color: #f1f5f9; margin-top: 6px; line-height: 1.5;">{item["msg"]}</div>
             </div>
             """, unsafe_allow_html=True)
 
     # 2. Tab GEO Display
     with tab_geo:
-        st.markdown("<p style='color: #8b9bb4;'>LLM 엔진이 본문을 출처로 인용할 때 우선 고려하는 수치/통계 신뢰성, JSON-LD, 문장 가독성을 점검합니다.</p>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #cbd5e1; font-size: 1rem; margin-bottom: 15px;'>LLM 엔진이 본문을 출처로 인용할 때 우선 고려하는 수치/통계 신뢰성, JSON-LD, 문장 가독성을 점검합니다.</p>", unsafe_allow_html=True)
         
         for item in scores["geo_checks"]:
             badge_class = "status-pass" if item["status"] == "PASS" else ("status-warn" if item["status"] == "WARN" else "status-fail")
             st.markdown(f"""
-            <div style="background: rgba(30, 30, 45, 0.4); border-left: 4px solid { '#2ecc71' if item['status'] == 'PASS' else ('#f1c40f' if item['status'] == 'WARN' else '#e74c3c') }; padding: 15px; border-radius: 4px; margin-bottom: 12px;">
+            <div style="background: #161a23; border-left: 4px solid { '#2ecc71' if item['status'] == 'PASS' else ('#f1c40f' if item['status'] == 'WARN' else '#e74c3c') }; padding: 15px; border-radius: 8px; margin-bottom: 12px; border-top: 1px solid rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.03);">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <strong style="color: #ffffff; font-size: 1.05rem;">{item["item"]}</strong>
                     <span class="status-badge {badge_class}">{item["status"]} ({item["value"]})</span>
                 </div>
-                <div style="font-size: 0.92rem; color: #b0c4de; margin-top: 6px;">{item["msg"]}</div>
+                <div style="font-size: 0.92rem; color: #f1f5f9; margin-top: 6px; line-height: 1.5;">{item["msg"]}</div>
             </div>
             """, unsafe_allow_html=True)
 
