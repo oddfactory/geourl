@@ -882,22 +882,41 @@ with input_tab_html:
 st.sidebar.image("https://img.icons8.com/nolan/128/artificial-intelligence.png", width=70)
 
 # Wrap API settings title and description in a beautiful, premium visual card with high visibility
+# API Key Configuration via Streamlit Secrets (Security Guardrail)
+#
+# 로컬 개발 및 테스트를 위한 `.streamlit/secrets.toml` 파일 예시 구조:
+# ==========================================================
+# # .streamlit/secrets.toml
+# GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+# ==========================================================
+
 st.sidebar.markdown("""
 <div style="background: rgba(102, 252, 241, 0.08); border: 2px solid rgba(102, 252, 241, 0.4); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
     <h3 style="color: #66fcf1; margin-top: 0; margin-bottom: 10px; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
         🛠️ Gemini API 설정
     </h3>
     <p style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.5; margin: 0;">
-        Google AI Studio에서 발급받은 API 키를 등록하면, AI 검색에 최적화된 <strong>GEO 전문가 심층 피드백</strong>을 실시간으로 발급받을 수 있습니다.
+        안전한 API 관리를 위해 Streamlit Secrets를 통해 <strong>GEMINI_API_KEY</strong>를 로드합니다.
     </p>
 </div>
 """, unsafe_allow_html=True)
 
-api_key = st.sidebar.text_input(
-    "🔑 Gemini API Key 입력",
-    type="password",
-    help="Google AI Studio에서 발급받은 API 키를 입력해 주세요."
-)
+# Check if Gemini API key exists in st.secrets
+api_key_configured = "GEMINI_API_KEY" in st.secrets and st.secrets["GEMINI_API_KEY"].strip()
+
+if api_key_configured:
+    st.sidebar.success("🔑 Gemini API 인증 완료 (secrets.toml)")
+else:
+    st.sidebar.error("❌ Gemini API Key 미설정")
+    st.sidebar.markdown(
+        """
+        <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+            로컬 테스트를 위해 프로젝트 루트에 <code>.streamlit/secrets.toml</code> 파일을 생성하고 아래 형식을 작성하세요:
+            <pre style="background-color: #1a1f2c; padding: 8px; border-radius: 4px; border: 1px solid rgba(102, 252, 241, 0.2); color: #66fcf1; font-family: monospace;">GEMINI_API_KEY = "발급받은_API_키"</pre>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 selected_model = st.sidebar.selectbox(
     "⚙️ Gemini 모델 선택",
@@ -965,8 +984,8 @@ if st.session_state.scraped_data and st.session_state.scores:
     st.markdown("<hr>", unsafe_allow_html=True)
     st.markdown('<h3>🤖 AI 검색엔진 추천을 위한 전문가 GEO 심층 컨설팅</h3>', unsafe_allow_html=True)
 
-    if not api_key:
-        st.info("💡 사이드바에 **Gemini API Key**를 입력하시면 세계 최고의 GEO 컨설턴트가 제공하는 맞춤형 심층 피드백을 실시간으로 발급받을 수 있습니다.")
+    if not api_key_configured:
+        st.info("💡 **Gemini API Key**가 설정되지 않았습니다. 사이드바의 지침에 따라 `.streamlit/secrets.toml` 파일에 API 키를 설정해주세요.")
         consult_btn = st.button("🩺 전문가 GEO 심층 컨설팅 시작", disabled=True)
     else:
         consult_btn = st.button("🩺 전문가 GEO 심층 컨설팅 시작", disabled=False)
@@ -974,8 +993,8 @@ if st.session_state.scraped_data and st.session_state.scores:
         if consult_btn:
             with st.spinner("🤖 세계 최고의 GEO 컨설턴트 페르소나를 장착하고 사이트 텍스트 구조 분석 및 개선 제안서를 작성 중입니다..."):
                 try:
-                    # Initialize the google-genai client
-                    client = genai.Client(api_key=api_key)
+                    # Initialize the google-genai client using st.secrets
+                    client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
                     
                     # Prepare input text (safely truncated to fit prompt cleanly)
                     preview_text = data["body_text"][:4000]
